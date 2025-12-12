@@ -1,12 +1,15 @@
-# On part de l'image officielle n8n (qui est basée sur Alpine Linux)
+# 1. Utiliser l'image officielle n8n (Alpine)
 FROM n8nio/n8n:latest
 
-# 1. Passer en root pour avoir le droit d'installer des programmes
+# 2. Passer en root (administrateur) pour installer les outils
 USER root
 
-# 2. Installer FFmpeg proprement avec le gestionnaire natif (apk)
-# Cela installe automatiquement toutes les bonnes bibliothèques compatibles
+# 3. Installer FFmpeg (MÉTHODE APPROUVÉE)
 RUN apk add --no-cache ffmpeg
 
-# 3. Revenir à l'utilisateur 'node' pour la sécurité (standard n8n)
+# 4. Installer le nœud communautaire TikTok
+# Nous l'installons globalement pour qu'il soit accessible par n8n
+RUN npm install -g n8n-nodes-tiktok
+
+# 5. Revenir à l'utilisateur 'node' pour la sécurité
 USER node
