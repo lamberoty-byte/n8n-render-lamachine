@@ -1,17 +1,39 @@
-# Étape 1: Utiliser l'image de base n8n (qui est basée sur Alpine/BusyBox)
+# Étape 1: BUILDER - Utilisation de Debian pour installer FFmpeg et toutes ses dépendances (avec glibc).
+FROM debian:stable-slim AS ffmpeg_builder
+
+# Installer FFmpeg et les outils de base Debian
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libssl-dev \
+    locales \
+    # Installer les librairies C standard (glibc et libstdc++)
+    libc6 \
+    libstdc++6 \
+    # Nettoyage
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Étape 2: FINAL - Utiliser l'image n8n (Alpine) et copier les dépendances.
 FROM n8nio/n8n:latest
 
-# Passer à l'utilisateur 'root' (administrateur) pour installer les paquets.
+# Passer à root pour les copies
 USER root
 
-# Installer FFmpeg et ses dépendances avec le gestionnaire de paquets Alpine (apk).
-RUN apk add --no-cache ffmpeg && \
-    # Nettoyer le cache d'apk pour garder l'image légère
-    rm -rf /var/cache/apk/*
+# COPIE 1: Copier l'exécutable FFmpeg
+COPY --from=ffmpeg_builder /usr/bin/ffmpeg /usr/local/bin/ffmpeg
 
-# Étape CRUCIALE : Créer un lien symbolique vers un chemin du PATH plus universel.
-# Cela garantit que le binaire est trouvé même si le PATH de l'utilisateur 'node' est restreint.
-RUN ln -s /usr/bin/ffmpeg /usr/local/bin/ffmpeg
+# COPIE 2: Copier TOUTES les librairies GLIBC et STD C++
+# Ceci est l'étape la plus critique pour résoudre les erreurs de "symbole introuvable" (libstdc++ et libgcc)
+COPY --from=ffmpeg_builder /usr/lib/x86_64-linux-gnu/ /usr/lib/
+COPY --from=ffmpeg_builder /lib/x86_64-linux-gnu/ /lib/
 
-# Revenir à l'utilisateur par défaut 'node' pour des raisons de sécurité.
+# COPIE 3: Copier le chargeur dynamique GLIBC lui-même pour surmonter l'erreur ld-linux-x86-64.so.2
+# Il doit être copié à la racine /lib/ pour être trouvé par le binaire FFmpeg
+COPY --from=ffmpeg_builder /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
+
+# COPIE 4: Copier le binaire GLIBC lui-même pour les symboles manquants
+COPY --from=ffmpeg_builder /lib/x86_64-linux-gnu/libc.so.6 /lib/libc.so.6
+COPY --from=ffmpeg_builder /usr/lib/ /usr/lib/
+
+# Revenir à l'utilisateur par défaut 'node' pour la sécurité.
 USER node
