@@ -1,15 +1,14 @@
-# Étape 1: Utiliser une image de base Alpine (l'approche la plus courante pour les images légères)
+# Étape 1: Utiliser l'image de base n8n (qui est basée sur Alpine)
 FROM n8nio/n8n:latest
 
-# Passer temporairement à l'utilisateur 'root' pour l'installation des paquets
+# Passer à l'utilisateur 'root' (administrateur) pour installer les paquets.
 USER root
 
-# Installer FFmpeg et toutes ses dépendances en utilisant le gestionnaire de paquets Alpine (apk)
-# Le paquet 'ffmpeg' sur Alpine contient le binaire et toutes ses dépendances.
-# L'option '--no-cache' et la suppression de la liste 'apk' à la fin gardent l'image légère.
+# Installer FFmpeg et ses dépendances avec le gestionnaire de paquets Alpine (apk).
+# L'installation doit être faite par 'root' pour les permissions.
 RUN apk add --no-cache ffmpeg && \
-    # Nettoyer
+    # Nettoyer le cache d'apk pour garder l'image légère
     rm -rf /var/cache/apk/*
 
-# Revenir à l'utilisateur par défaut n8n pour la sécurité
+# Revenir à l'utilisateur par défaut 'node' pour des raisons de sécurité.
 USER node
