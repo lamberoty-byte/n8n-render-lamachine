@@ -1,19 +1,22 @@
-# 1. Image de base n8n (Alpine)
+# 1. Image de base
 FROM n8nio/n8n:latest
 
-# 2. Passer en root pour les installations (obligatoire pour apk)
+# 2. Passer en root
 USER root
 
-# 3. Installer FFmpeg
+# 3. Installer FFmpeg (pour le traitement vidéo)
 RUN apk add --no-cache ffmpeg
 
-# 4. Définir le répertoire de travail
-WORKDIR /usr/local/lib/node_modules/n8n/
+# 4. Installer pnpm via npm (nécessaire pour lire le paquet TikTok)
+RUN npm install -g pnpm
 
-# 5. Installer le nœud communautaire TikTok
-# Nous utilisons 'npm' et non 'pnpm' ici pour éviter le ERR_PNPM_NO_GLOBAL_BIN_DIR.
-# Cette installation est maintenant locale au dossier de n8n, ce qui est beaucoup plus stable.
-RUN npm install n8n-nodes-tiktok
+# 5. Se placer dans le dossier d'installation de n8n
+WORKDIR /usr/local/lib/node_modules/n8n
 
-# 6. Revenir à l'utilisateur sécurisé 'node'
+# 6. Installer le nœud TikTok AVEC pnpm mais LOCALEMENT
+# 'pnpm add' sans '-g' installe le paquet directement dans le dossier courant
+# Cela contourne l'erreur de chemin global ET l'erreur de protocole npm.
+RUN pnpm add n8n-nodes-tiktok
+
+# 7. Revenir à l'utilisateur sécurisé
 USER node
