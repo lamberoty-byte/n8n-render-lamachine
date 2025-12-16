@@ -1,21 +1,22 @@
-# 1. Image de base n8n
+# 1. Image de base
 FROM n8nio/n8n:latest
 
-# 2. Passer en root pour les installations
+# 2. Passer en root
 USER root
 
-# 3. Installer FFmpeg (Toujours requis pour vos vidéos)
+# 3. Installer FFmpeg
 RUN apk add --no-cache ffmpeg
 
-# 4. Installer le nœud TikTok GLOBALEMENT avec NPM
-# --ignore-scripts : Contourne l'interdiction "only-allow pnpm"
-# --omit=dev : N'installe que le nécessaire pour gagner de la place
-# Nous ne changeons PAS de répertoire (WORKDIR), ce qui évite les conflits avec le package.json de n8n
+# 4. ASTUCE CRITIQUE : Se placer à la racine pour éviter les restrictions de dossier n8n
+WORKDIR /
+
+# 5. Installer le nœud TikTok GLOBALEMENT
+# --ignore-scripts : OBLIGATOIRE pour contourner l'erreur "only-allow pnpm" que vous avez eue
+# --omit=dev : Pour alléger l'installation
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 5. Définir la variable pour que n8n trouve le nœud
-# Par sécurité, on force n8n à regarder dans le dossier global
+# 6. Dire à n8n où trouver ce nouveau nœud
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 6. Revenir à l'utilisateur sécurisé
+# 7. Revenir à l'utilisateur sécurisé
 USER node
