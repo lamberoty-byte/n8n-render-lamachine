@@ -1,10 +1,9 @@
-# 1. Utilisation de l'image Debian officielle (le tag exact de Docker Hub)
-FROM n8nio/n8n:latest-debian
+# 1. On utilise une version spécifique très récente sous Debian Bookworm
+FROM n8nio/n8n:1.74.3-debian
 
-# 2. Passage en ROOT pour l'installation
 USER root
 
-# 3. Installation des outils (Maintenant garanti sur cette image)
+# 2. Mise à jour et installation (Cette fois les dépôts seront trouvés)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
@@ -13,15 +12,15 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# 4. Installation du nœud TikTok
+# 3. Installation du nœud TikTok
 WORKDIR /
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 5. Configuration du chemin
+# 4. Configuration
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 6. On repasse sur l'utilisateur 'node' pour Render
+# 5. Retour utilisateur node
 USER node
 
-# 7. Lancement
+# 6. Lancement
 ENTRYPOINT ["tini", "--", "n8n"]
