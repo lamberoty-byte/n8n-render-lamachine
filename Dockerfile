@@ -1,28 +1,24 @@
-# 1. Image de base n8n (Basée sur Debian désormais)
-FROM n8nio/n8n:latest
+# 1. On FORCE la version Debian pour être SUR d'avoir apt-get
+FROM n8nio/n8n:latest-debian
 
 # 2. Passer en root pour les installations
 USER root
 
-# 3. Mettre à jour les dépôts et installer les dépendances avec apt-get
-# build-essential remplace build-base sur Debian
+# 3. Installation des outils avec apt-get (Garanti sur cette image)
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    ffmpeg \
     python3 \
     python3-dev \
+    build-essential \
     git \
-    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# 4. Se placer à la racine pour l'installation du nœud
+# 4. Installation du nœud TikTok
 WORKDIR /
-
-# 5. Installer le nœud TikTok GLOBALEMENT
-# On garde --ignore-scripts pour éviter le conflit pnpm
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 6. Configurer le chemin des extensions
+# 5. Configuration du chemin
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 7. Revenir à l'utilisateur n8n
+# 6. Revenir à l'utilisateur sécurisé
 USER node
