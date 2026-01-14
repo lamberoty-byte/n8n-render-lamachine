@@ -1,10 +1,10 @@
-# 1. Image de base officielle (Alpine - Node 20+)
-FROM n8nio/n8n:latest
+# 1. On précise explicitement ALPINE pour que 'apk' fonctionne
+FROM n8nio/n8n:latest-alpine
 
-# 2. On passe en root pour installer FFmpeg
+# 2. Passage en root pour l'installation
 USER root
 
-# 3. Installation des outils (Base Alpine)
+# 3. Installation des outils (Cette fois 'apk' sera bien là)
 RUN apk add --no-cache \
     ffmpeg \
     python3 \
@@ -17,12 +17,11 @@ RUN apk add --no-cache \
 WORKDIR /
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 5. Configuration des chemins
+# 5. Configuration du chemin
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 6. CRUCIAL POUR RENDER : On force l'utilisateur 'node' dès maintenant
-# et on court-circuite le script de démarrage qui cause l'erreur "Operation not permitted"
+# 6. CRUCIAL POUR RENDER : On force l'utilisateur node
 USER node
 
-# 7. On lance n8n directement sans passer par le script 'entrypoint' qui bugge sur Render
+# 7. On court-circuite le script de démarrage pour éviter "Operation not permitted"
 ENTRYPOINT ["tini", "--", "n8n"]
