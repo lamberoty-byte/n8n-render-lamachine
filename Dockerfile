@@ -1,10 +1,10 @@
-# 1. Utilisation de la version UBUNTU (plus fiable pour les installations)
-FROM n8nio/n8n:latest-ubuntu
+# 1. Utilisation de l'image Debian officielle (le tag exact de Docker Hub)
+FROM n8nio/n8n:latest-debian
 
-# 2. Passage en ROOT obligatoire pour installer FFmpeg
+# 2. Passage en ROOT pour l'installation
 USER root
 
-# 3. Installation propre sur base Ubuntu/Debian
+# 3. Installation des outils (Maintenant garanti sur cette image)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
@@ -17,10 +17,10 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 5. On indique à n8n où est le nœud
+# 5. Configuration du chemin
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 6. On repasse sur l'utilisateur par défaut pour Render
+# 6. On repasse sur l'utilisateur 'node' pour Render
 USER node
 
 # 7. Lancement
