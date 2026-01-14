@@ -1,29 +1,28 @@
-# 1. Utilisation de l'image Debian
-FROM n8nio/n8n:latest-debian
+# 1. Image de base officielle (Alpine - Node 20+)
+FROM n8nio/n8n:latest
 
+# 2. On passe en root pour installer FFmpeg
 USER root
 
-# 2. Correction des dépôts Debian Buster (car la version est en fin de vie)
-# Cette étape permet à apt-get de fonctionner à nouveau
-RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
-    sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' /etc/apt/sources.list && \
-    sed -i '/buster-updates/d' /etc/apt/sources.list
-
-# 3. Installation de FFmpeg et des dépendances (Maintenant ça va marcher !)
-RUN apt-get update && apt-get install -y \
+# 3. Installation des outils (Base Alpine)
+RUN apk add --no-cache \
     ffmpeg \
     python3 \
-    python3-dev \
-    build-essential \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+    make \
+    g++ \
+    build-base \
+    git
 
 # 4. Installation du nœud TikTok
 WORKDIR /
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 5. Configuration du chemin des extensions
+# 5. Configuration des chemins
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 6. Revenir à l'utilisateur n8n
+# 6. CRUCIAL POUR RENDER : On force l'utilisateur 'node' dès maintenant
+# et on court-circuite le script de démarrage qui cause l'erreur "Operation not permitted"
 USER node
+
+# 7. On lance n8n directement sans passer par le script 'entrypoint' qui bugge sur Render
+ENTRYPOINT ["tini", "--", "n8n"]
