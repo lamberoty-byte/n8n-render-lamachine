@@ -1,31 +1,27 @@
-# 1. On utilise la dernière version officielle
-FROM n8nio/n8n:latest
+# 1. Utilisation de la version UBUNTU (plus fiable pour les installations)
+FROM n8nio/n8n:latest-ubuntu
 
+# 2. Passage en ROOT obligatoire pour installer FFmpeg
 USER root
 
-# 2. SCRIPT HYBRIDE : Détecte automatiquement si on est sur Alpine ou Debian
-# Si "apk" existe, on l'utilise. Sinon, on utilise "apt-get".
-RUN if command -v apk > /dev/null; then \
-        echo "Alpine Linux détecté. Installation via APK..."; \
-        apk add --no-cache ffmpeg python3 make g++ build-base git; \
-    elif command -v apt-get > /dev/null; then \
-        echo "Debian Linux détecté. Installation via APT..."; \
-        apt-get update && apt-get install -y ffmpeg python3 python3-dev build-essential git; \
-        rm -rf /var/lib/apt/lists/*; \
-    else \
-        echo "ERREUR CRITIQUE : Impossible de détecter le gestionnaire de paquets."; \
-        exit 1; \
-    fi
+# 3. Installation propre sur base Ubuntu/Debian
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    python3 \
+    python3-dev \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# 3. Installation du nœud TikTok
+# 4. Installation du nœud TikTok
 WORKDIR /
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 4. Configuration des extensions
+# 5. On indique à n8n où est le nœud
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 5. Retour à l'utilisateur sécurisé
+# 6. On repasse sur l'utilisateur par défaut pour Render
 USER node
 
-# 6. Lancement
+# 7. Lancement
 ENTRYPOINT ["tini", "--", "n8n"]
