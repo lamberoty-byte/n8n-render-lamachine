@@ -1,31 +1,27 @@
-# 1. Image standard (celle que Render trouve sans problème)
+# 1. Image que Render arrive à télécharger
 FROM n8nio/n8n:latest
 
+# 2. Passage en root pour l'installation
 USER root
 
-# 2. Correction des dépôts Debian (au cas où l'image est ancienne)
-RUN if grep -q "buster" /etc/os-release; then \
-    sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
-    sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' /etc/apt/sources.list && \
-    sed -i '/buster-updates/d' /etc/apt/sources.list; \
-    fi
-
-# 3. Installation avec apt-get (Debian) et non apk (Alpine)
-RUN apt-get update && apt-get install -y \
+# 3. Installation des outils (Version Alpine car 'latest' est maintenant Alpine)
+RUN apk add --no-cache \
     ffmpeg \
     python3 \
-    python3-dev \
-    build-essential \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+    make \
+    g++ \
+    build-base \
+    git
 
 # 4. Installation du nœud TikTok
 WORKDIR /
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 5. Configuration
+# 5. Configuration du chemin
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 6. Bypass de l'erreur "Operation not permitted" de Render
+# 6. Sécurité Render : On définit l'utilisateur avant le lancement
 USER node
+
+# 7. On lance n8n en ignorant le script d'entrée qui cause l'erreur de permission
 ENTRYPOINT ["tini", "--", "n8n"]
