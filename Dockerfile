@@ -1,11 +1,10 @@
-# 1. On prend la dernière version officielle (qui est sous Debian)
-FROM n8nio/n8n:latest
+# 1. ON FORCE L'IMAGE DEBIAN EXPLICITEMENT
+# Cela garantit que "apt-get" existe. Plus de doute possible.
+FROM n8nio/n8n:debian
 
-# 2. On passe en root pour avoir le droit d'installer des logiciels
 USER root
 
-# 3. Installation des dépendances avec apt-get (car nous sommes sur Debian)
-# On installe FFmpeg, Python et les outils de compilation pour TikTok
+# 2. Installation avec apt-get (Maintenant garanti de fonctionner)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
@@ -14,15 +13,15 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# 4. Installation du nœud TikTok
+# 3. Installation du nœud TikTok
 WORKDIR /
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 5. On indique à n8n où trouver le nœud TikTok
+# 4. Configuration
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 6. CRUCIAL POUR RENDER : On rebascule sur l'utilisateur 'node'
+# 5. Sécurité Render : On repasse sur l'utilisateur node
 USER node
 
-# 7. On force le démarrage propre pour éviter le crash "Operation not permitted"
+# 6. Lancement sécurisé
 ENTRYPOINT ["tini", "--", "n8n"]
