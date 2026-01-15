@@ -1,27 +1,33 @@
-# 1. Image de base officielle
-FROM n8nio/n8n:latest
+# 1. On utilise une base Node.js certifiée (Debian Bookworm)
+# C'est une image stable où apt-get est GARANTI
+FROM node:20-bookworm
 
-# 2. On passe en root pour avoir les droits d'installation
+# 2. Installation de TOUT ce dont vous avez besoin (FFmpeg, Python, etc.)
 USER root
-
-# 3. Installation pour DEBIAN (car votre log dit "apk: not found")
-# On nettoie le cache à la fin pour gagner de la place
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
-    python3-dev \
     build-essential \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# 4. Installation de TikTok en mode GLOBAL
-# IMPORTANT : On ne change PAS de WORKDIR pour ne pas perdre les commandes n8n
-RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
+# 3. Installation de n8n et du nœud TikTok en global
+# --unsafe-perm est nécessaire pour l'installation globale de n8n
+RUN npm install -g n8n n8n-nodes-tiktok --unsafe-perm
 
-# 5. On définit le chemin pour que n8n trouve le nœud
+# 4. Configuration de l'environnement
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
+ENV NODE_ENV=production
 
-# 6. On repasse sur l'utilisateur 'node'
+# 5. Création d'un dossier de travail pour éviter les erreurs de permission
+WORKDIR /home/node/.n8n
+RUN chown -R node:node /home/node
+
+# 6. On repasse sur l'utilisateur node
 USER node
 
-# On laisse n8n utiliser son propre système de démarrage (pas d'ENTRYPOINT)
+# 7. Port par défaut de n8n
+EXPOSE 5678
+
+# 8. Commande de lancement propre
+CMD ["n8n", "start"]
