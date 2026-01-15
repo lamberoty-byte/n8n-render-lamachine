@@ -1,19 +1,27 @@
-# 1. Image de base (Alpine) qui a fonctionné au build précédent
+# 1. Image de base officielle
 FROM n8nio/n8n:latest
 
+# 2. On passe en root pour avoir les droits d'installation
 USER root
 
-# 2. Installation des dépendances système pour TikTok et FFmpeg
-RUN apk add --no-cache ffmpeg python3 make g++ build-base git
+# 3. Installation pour DEBIAN (car votre log dit "apk: not found")
+# On nettoie le cache à la fin pour gagner de la place
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    python3 \
+    python3-dev \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# 3. Installation du nœud TikTok en GLOBAL
-# On ne change PAS de WORKDIR pour ne pas casser n8n
+# 4. Installation de TikTok en mode GLOBAL
+# IMPORTANT : On ne change PAS de WORKDIR pour ne pas perdre les commandes n8n
 RUN npm install -g n8n-nodes-tiktok --ignore-scripts --omit=dev
 
-# 4. On indique à n8n où trouver le nœud installé
+# 5. On définit le chemin pour que n8n trouve le nœud
 ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
 
-# 5. On revient à l'utilisateur par défaut sans rien toucher d'autre
+# 6. On repasse sur l'utilisateur 'node'
 USER node
 
-# 6. On ne définit PAS d'ENTRYPOINT personnalisé (on laisse celui de n8n par défaut)
+# On laisse n8n utiliser son propre système de démarrage (pas d'ENTRYPOINT)
