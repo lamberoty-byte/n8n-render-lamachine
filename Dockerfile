@@ -1,25 +1,16 @@
-FROM node:20-bookworm
+# Utilisation de l'image officielle n8n (dernière version)
+FROM docker.n8n.io/n8nio/n8n:latest
 
 USER root
-# Installation de ffmpeg et des outils de build
-RUN apt-get update && apt-get install -y ffmpeg python3 build-essential git && rm -rf /var/lib/apt/lists/*
 
-# Installation de n8n et du nœud TikTok
-RUN npm install -g n8n --unsafe-perm
-RUN npm install -g n8n-nodes-tiktok --ignore-scripts --unsafe-perm
+# 1. Installation de FFmpeg
+RUN apk add --no-cache ffmpeg
 
-# Définition du dossier de travail
-WORKDIR /home/node/.n8n
+# 2. Installation forcée du nœud TikTok dans le répertoire global de n8n
+RUN cd /usr/local/lib/node_modules/n8n && npm install n8n-nodes-tiktok
 
-# Variables pour n8n
-ENV N8N_CUSTOM_EXTENSIONS=/usr/local/lib/node_modules/n8n-nodes-tiktok
-ENV N8N_ENABLE_COMMAND_SUBSTITUTION=true
-
-# On s'assure que l'utilisateur node a les bons droits
-RUN chown -R node:node /home/node
+# Retour à l'utilisateur n8n pour la sécurité
 USER node
 
-EXPOSE 5678
-
-# On lance n8n avec les options de sécurité directement dans la commande
+# Force l'affichage du nœud "Execute Command" au démarrage
 CMD ["n8n", "start", "--unpooled-nodes-list", "n8n-nodes-base.executeCommand"]
